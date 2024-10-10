@@ -1,0 +1,58 @@
+version: "3.8"
+
+services:
+  frontend:
+    image: node:18
+    container_name: frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: >
+      sh -c "npm install &&
+      if [ \"$NODE_ENV\" = \"production\" ]; then
+        npm run build && npm start;
+      else
+        npm start;
+      fi"
+    environment:
+      - REACT_APP_API_URL=http://backend:4000
+      - NODE_ENV=${NODE_ENV:-development}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  backend:
+    image: node:18
+    container_name: backend
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    command: >
+      sh -c "npm install &&
+      if [ \"$NODE_ENV\" = \"production\" ]; then
+        npm run start:prod;
+      else
+        npm run start:dev;
+      fi"
+    environment:
+      - DATABASE_URL=mysql://root:password@mysql:3306/mydatabase
+      - NODE_ENV=${NODE_ENV:-development}
+    ports:
+      - "4000:4000"
+    depends_on:
+      - mysql
+
+  mysql:
+    image: mysql:8
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: mydatabase
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+volumes:
+  mysql-data:
